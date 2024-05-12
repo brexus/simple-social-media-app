@@ -7,12 +7,12 @@ const cors = require("cors");
 const jwt = require("jsonwebtoken");
 const cookieParser = require('cookie-parser');
 const bcrypt = require("bcrypt");
-
 const routes = express.Router();
+require('dotenv').config();
 
 routes.use(express.json());
 routes.use(cors({
-    origin: ["http://localhost:5173"],
+    origin: [process.env.REACT_APP_ENDPOINT],
     methods: ["GET", "POST", "DELETE", "PATCH"],
     credentials: true
 }));
@@ -41,15 +41,14 @@ routes.get("/api/users/:id", isAuthenticated, (req, res) => {
 routes.post('/api/register', (req, res) => {
     const {firstName, lastName, email, password } = req.body;
 
-
     UserModel.findOne({email: email})
     .then(existingUser => {
         if (existingUser) {
-            // Jeśli użytkownik już istnieje, zwróć odpowiedni błąd
+            // If the user already exists, return the appropriate error
             return res.status(400).json("The email is already taken");
         }
 
-        // Jeśli użytkownik nie istnieje, hashowanie hasła i tworzenie nowego użytkownika
+        // If the user does not exist, hash the password and create a new user
         bcrypt.hash(password, 10) // password hashing
         .then(hash => {
             UserModel.create({firstName: firstName, lastName: lastName, email: email, password: hash})
@@ -61,7 +60,7 @@ routes.post('/api/register', (req, res) => {
                 res.status(400).json(err)
             });
         })
-        .catch(err => console.log("Błąd przy hashowaniu hasła!"));
+        .catch(err => console.log("Error in password hashing!"));
 
     })
     .catch(err => {
@@ -81,8 +80,7 @@ routes.post('/api/login', (req, res) => {
             bcrypt.compare(password, user.password, (err, response) => {
                 
                 if(response) {
-                    const token = jwt.sign({email: user.email}, "jwt-secret-key", {expiresIn: "1d"});
-                    //res.cookie("token", token);
+                    const token = jwt.sign({email: user.email}, process.env.JWT_SECRET_KEY, {expiresIn: "1d"});
                     
                     const userData = {
                         firstName: user.firstName,
@@ -100,26 +98,6 @@ routes.post('/api/login', (req, res) => {
             res.status(400).json("No record existed");
         }
 
-        // if(user) {
-        //     if(user.password === password) {
-        //         const token = jwt.sign({email: user.email}, "jwt-secret-key", {expiresIn: "1d"});
-        //         //res.cookie("token", token);
-                
-        //         const userData = {
-        //             firstName: user.firstName,
-        //             lastName: user.lastName,
-        //             email: user.email,
-        //             _id: user._id
-        //         };
-
-        //         res.status(200).json({token, userData});
-
-        //     } else {
-        //         res.status(400).json("The password is incorrect");
-        //     }
-        // } else {
-        //     res.status(400).json("No record existed");
-        // }
     })
     .catch(err => console.log("tutaj"));
 
@@ -131,10 +109,9 @@ routes.post('/api/logout', (req, res) => {
 
     if(token) {
         res.clearCookie('token');
-        console.log("Wylogowano pomyślnie - serwer");
         res.status(200).json("Logged out successfully");
     } else {
-        console.log("Nie da się wylogować - serwer");
+        console.log("Failed to log out - server");
     }
     
 });
@@ -148,8 +125,6 @@ routes.post("/api/posts", isAuthenticated, (req, res) => {
 
     PostModel.create(req.body)
         .then(post => {
-            //console.log("TUTAJ");
-
             res.status(200).json(post);
         })
         .catch(err => {
@@ -166,11 +141,10 @@ routes.post("/api/posts", isAuthenticated, (req, res) => {
 routes.get("/api/posts", isAuthenticated, async (req, res) => {
     PostModel.find({}).sort({ createdAt: -1 })
     .then(posts => {
-        // Pomyślnie pobrano posty
+        // Sucessfull fetch post data
         res.status(200).json(posts);
     })
     .catch(err => {
-        // Obsługa błędów
         res.status(400).json(err);
     })
 });
@@ -215,16 +189,14 @@ routes.post("/api/posts/:postId/reaction", isAuthenticated, async (req, res) => 
         const userId = users[0]._id;
         PostModel.find({_id: postId})
         .then(post => {
-            // Pomyślnie pobrano post
+            // Sucessfull fetch post data
     
             if (post[0].likes.includes(userId)) {
-                //console.log("Cofam lajka");
                 post[0].likes.pull(userId);
             } else {
-                //console.log("Daje lajka");
                 post[0].likes.push(userId);
             }
-            //post[0].likes = [];
+            
             post[0].save()
             .then(() => {
                 res.status(200).json({ like: post[0].likes.length });
@@ -235,7 +207,6 @@ routes.post("/api/posts/:postId/reaction", isAuthenticated, async (req, res) => 
 
         })
         .catch(err => {
-            // Obsługa błędów
             res.status(400).json(err);
         })
 
