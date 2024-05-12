@@ -26,9 +26,9 @@ This project contains a project for a simple social media application built with
    npm install
    ```
 4. Create a `.env` file into `./backend` directory:
-```sh
+    ```sh
     cd ../backend
-```
+    ```
 You can rename the `.env.example` file to `.env`, then fill it out accordingly.
 
 5. Run the server and client:
