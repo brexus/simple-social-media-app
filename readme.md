@@ -29,7 +29,7 @@ This project contains a project for a simple social media application built with
     ```sh
     cd ../backend
     ```
-You can rename the `.env.example` file to `.env`, then fill it out accordingly.
+    You can rename the `.env.example` file to `.env`, then fill it out accordingly.
 
 5. Run the server and client:
    ```js
